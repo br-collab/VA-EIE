@@ -110,7 +110,7 @@ Produce the rater action queue and CUE risk assessment per the output schema.`
 
   const stream = await client.messages.stream({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
+    max_tokens: 2000,
     system: buildSystemPrompt(),
     messages: [{ role: 'user', content: userPrompt }],
   })
