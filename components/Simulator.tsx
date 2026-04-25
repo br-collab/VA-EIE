@@ -49,6 +49,29 @@ interface SimulationResult {
   summary: string
 }
 
+function normalizeSimulationResult(input: unknown): SimulationResult {
+  const obj = (input && typeof input === 'object') ? (input as Record<string, unknown>) : {}
+
+  const cueRisk =
+    obj.cueRisk === 'LOW' ||
+    obj.cueRisk === 'MEDIUM' ||
+    obj.cueRisk === 'HIGH' ||
+    obj.cueRisk === 'CRITICAL'
+      ? obj.cueRisk
+      : 'MEDIUM'
+
+  const queue = Array.isArray(obj.raterActionQueue) ? obj.raterActionQueue : []
+  const rules = Array.isArray(obj.autoFiredRules) ? obj.autoFiredRules : []
+
+  return {
+    cueRisk,
+    cueRiskReason: typeof obj.cueRiskReason === 'string' ? obj.cueRiskReason : 'Risk rationale unavailable.',
+    raterActionQueue: queue as RaterAction[],
+    autoFiredRules: rules as AutoFiredRule[],
+    summary: typeof obj.summary === 'string' ? obj.summary : 'Simulation completed with partial structured output.',
+  }
+}
+
 const cueRiskBadgeVariant: Record<CUERisk, BadgeVariant> = {
   LOW:      'green',
   MEDIUM:   'amber',
@@ -88,10 +111,10 @@ function parseSimulationResult(rawText: string): SimulationResult {
   const candidate = unfenced.slice(jsonStart, jsonEnd + 1)
 
   try {
-    return JSON.parse(candidate) as SimulationResult
+    return normalizeSimulationResult(JSON.parse(candidate))
   } catch {
     const repaired = jsonrepair(candidate)
-    return JSON.parse(repaired) as SimulationResult
+    return normalizeSimulationResult(JSON.parse(repaired))
   }
 }
 
