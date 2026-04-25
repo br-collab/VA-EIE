@@ -74,6 +74,26 @@ interface SimulatorProps {
   prefillContext?: string
 }
 
+function parseSimulationResult(rawText: string): SimulationResult {
+  // Some model responses include fenced JSON or minor trailing-comma issues.
+  const unfenced = rawText.replace(/```json/gi, '').replace(/```/g, '').trim()
+  const jsonStart = unfenced.indexOf('{')
+  const jsonEnd = unfenced.lastIndexOf('}')
+
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    throw new Error('No JSON payload found in model response.')
+  }
+
+  const candidate = unfenced.slice(jsonStart, jsonEnd + 1)
+
+  try {
+    return JSON.parse(candidate) as SimulationResult
+  } catch {
+    const repaired = candidate.replace(/,\s*([}\]])/g, '$1')
+    return JSON.parse(repaired) as SimulationResult
+  }
+}
+
 export default function Simulator({ prefillContext }: SimulatorProps) {
   const [mos, setMos] = useState(prefillContext ? '' : '')
   const [conditions, setConditions] = useState<string[]>([])
@@ -147,17 +167,9 @@ export default function Simulator({ prefillContext }: SimulatorProps) {
 
       stopPipelineAnimation()
 
-      // Parse JSON from streamed text
-      const jsonStart = accumulated.indexOf('{')
-      const jsonEnd = accumulated.lastIndexOf('}')
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1)
-        const parsed = JSON.parse(jsonStr) as SimulationResult
-        setResult(parsed)
-        setStreamText('')
-      } else {
-        setStreamText(accumulated)
-      }
+      const parsed = parseSimulationResult(accumulated)
+      setResult(parsed)
+      setStreamText('')
     } catch (err: unknown) {
       stopPipelineAnimation()
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
@@ -307,15 +319,15 @@ export default function Simulator({ prefillContext }: SimulatorProps) {
         </div>
       )}
 
-      {/* Streaming text (before parse) */}
+      {/* Streaming status (before parse) */}
       {streamText && !result && (
         <div className="border-0.5 border-va-border bg-va-gray-light px-4 py-3">
           <div className="font-dm-mono text-[10px] uppercase tracking-widest text-va-gray-mid mb-2">
             Receiving…
           </div>
-          <pre className="font-dm-mono text-xs text-va-gray-dark whitespace-pre-wrap break-words">
-            {streamText}
-          </pre>
+          <p className="font-sans text-sm text-va-gray-dark">
+            Streaming structured adjudication response...
+          </p>
         </div>
       )}
 
