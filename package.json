@@ -1,0 +1,32 @@
+{
+  "name": "va-eie",
+  "version": "1.0.0",
+  "description": "VA Evidence Intelligence Engine — Federal VA contract pitch application",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@fontsource/dm-mono": "^5.1.1",
+    "@fontsource/dm-sans": "^5.1.0",
+    "@fontsource/source-sans-pro": "^5.2.5",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "@types/react": "^18.3.21",
+    "@types/react-dom": "^18.3.6",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
