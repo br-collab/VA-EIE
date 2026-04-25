@@ -43,6 +43,9 @@ CRITICAL RULES:
 - Base all analysis strictly on the MOS table and CFR rules provided.
 - Apply the benefit of the doubt in favor of the veteran per 38 USC §5107(b).
 - Output ONLY valid JSON in the exact schema below. No prose outside JSON.
+- Limit raterActionQueue to a maximum of 4 items. Prioritize the most critical actions.
+- Include 3–5 autoFiredRules entries covering every applicable CFR rule from the MOS table.
+- Always include a non-empty summary.
 
 OUTPUT SCHEMA:
 {
@@ -110,7 +113,7 @@ Produce the rater action queue and CUE risk assessment per the output schema.`
 
   const stream = await client.messages.stream({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: buildSystemPrompt(),
     messages: [{ role: 'user', content: userPrompt }],
   })
