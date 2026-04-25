@@ -49,6 +49,44 @@ interface SimulationResult {
   summary: string
 }
 
+function asObjectArray(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter((v): v is Record<string, unknown> => !!v && typeof v === 'object') : []
+}
+
+function normalizeRaterAction(item: Record<string, unknown>): RaterAction {
+  const rawStatus = typeof item.status === 'string' ? item.status.toLowerCase() : 'flagged'
+  const status: RaterAction['status'] =
+    rawStatus === 'required' || rawStatus === 'recommended' || rawStatus === 'flagged'
+      ? rawStatus
+      : 'flagged'
+
+  const rawPriority = Number(item.priority)
+  return {
+    priority: Number.isFinite(rawPriority) && rawPriority > 0 ? rawPriority : 999,
+    action: typeof item.action === 'string' ? item.action : '',
+    cfrCite: typeof item.cfrCite === 'string' ? item.cfrCite : (typeof item.cite === 'string' ? item.cite : ''),
+    status,
+    rationale: typeof item.rationale === 'string' ? item.rationale : (typeof item.reason === 'string' ? item.reason : ''),
+  }
+}
+
+function normalizeAutoRule(item: Record<string, unknown>): AutoFiredRule {
+  return {
+    cite: typeof item.cite === 'string' ? item.cite : (typeof item.cfrCite === 'string' ? item.cfrCite : ''),
+    title: typeof item.title === 'string' ? item.title : (typeof item.action === 'string' ? item.action : ''),
+    applied: typeof item.applied === 'boolean' ? item.applied : true,
+    reason: typeof item.reason === 'string' ? item.reason : (typeof item.rationale === 'string' ? item.rationale : ''),
+  }
+}
+
+function isRaterActionCandidate(item: Record<string, unknown>): boolean {
+  return typeof item.action === 'string' || typeof item.priority === 'number' || typeof item.status === 'string'
+}
+
+function isAutoRuleCandidate(item: Record<string, unknown>): boolean {
+  return typeof item.title === 'string' || typeof item.applied === 'boolean' || (typeof item.cite === 'string' && typeof item.reason === 'string')
+}
+
 function normalizeSimulationResult(input: unknown): SimulationResult {
   const obj = (input && typeof input === 'object') ? (input as Record<string, unknown>) : {}
 
@@ -60,15 +98,26 @@ function normalizeSimulationResult(input: unknown): SimulationResult {
       ? obj.cueRisk
       : 'MEDIUM'
 
-  const queue = Array.isArray(obj.raterActionQueue) ? obj.raterActionQueue : []
-  const rules = Array.isArray(obj.autoFiredRules) ? obj.autoFiredRules : []
+  const rawQueue = asObjectArray(obj.raterActionQueue)
+  const rawRules = asObjectArray(obj.autoFiredRules)
+  const fallbackRules = asObjectArray(obj.rules)
+
+  // Route items by shape so model-misplaced arrays still land in correct panels.
+  const routedQueue = rawQueue.filter(isRaterActionCandidate)
+  const routedRulesFromQueue = rawQueue.filter(isAutoRuleCandidate)
+  const routedRules = (rawRules.length > 0 ? rawRules : fallbackRules).filter(isAutoRuleCandidate)
+
+  const finalQueue = routedQueue.map(normalizeRaterAction).filter((item) => item.action.length > 0)
+  const finalRules = [...routedRules, ...routedRulesFromQueue]
+    .map(normalizeAutoRule)
+    .filter((rule) => rule.title.length > 0)
 
   return {
     cueRisk,
     cueRiskReason: typeof obj.cueRiskReason === 'string' ? obj.cueRiskReason : 'Risk rationale unavailable.',
-    raterActionQueue: queue as RaterAction[],
-    autoFiredRules: rules as AutoFiredRule[],
-    summary: typeof obj.summary === 'string' ? obj.summary : 'Simulation completed with partial structured output.',
+    raterActionQueue: finalQueue,
+    autoFiredRules: finalRules,
+    summary: typeof obj.summary === 'string' ? obj.summary : '',
   }
 }
 
@@ -372,12 +421,14 @@ export default function Simulator({ prefillContext }: SimulatorProps) {
           </div>
 
           {/* Summary */}
-          <div className="border-0.5 border-va-border bg-va-gray-light px-4 py-3">
-            <div className="font-dm-mono text-[10px] uppercase tracking-widest text-va-gray-mid mb-1">
-              Summary
+          {result.summary.trim().length > 0 && (
+            <div className="border-0.5 border-va-border bg-va-gray-light px-4 py-3">
+              <div className="font-dm-mono text-[10px] uppercase tracking-widest text-va-gray-mid mb-1">
+                Summary
+              </div>
+              <p className="font-sans text-sm text-va-gray-dark leading-relaxed">{result.summary}</p>
             </div>
-            <p className="font-sans text-sm text-va-gray-dark leading-relaxed">{result.summary}</p>
-          </div>
+          )}
 
           {/* Two-column results */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
