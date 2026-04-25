@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useCallback } from 'react'
+import { jsonrepair } from 'jsonrepair'
 import PipelineBar, { PipelineStep, PipelineStepState } from '@/components/PipelineBar'
 import Badge, { BadgeVariant } from '@/components/Badge'
 import SectionLabel from '@/components/SectionLabel'
@@ -89,7 +90,7 @@ function parseSimulationResult(rawText: string): SimulationResult {
   try {
     return JSON.parse(candidate) as SimulationResult
   } catch {
-    const repaired = candidate.replace(/,\s*([}\]])/g, '$1')
+    const repaired = jsonrepair(candidate)
     return JSON.parse(repaired) as SimulationResult
   }
 }
