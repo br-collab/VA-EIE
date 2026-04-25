@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { mosTable } from '@/data/mos'
 import { cfrRules } from '@/data/cfr'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 interface SimulateRequest {
   mos: string

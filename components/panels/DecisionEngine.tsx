@@ -81,8 +81,9 @@ export default function DecisionEngine() {
           CUE Risk Detected — Prior Decision Review Required
         </div>
         <p className="font-sans text-sm text-va-gray-dark">
-          Prior rating for musculoskeletal condition may have misapplied the §4.10 functional
-          impairment standard. CUE review flagged — retroactive award exposure estimated.
+          A prior rating decision may have misapplied the §4.10 functional impairment standard
+          in effect at the time of adjudication. CUE review flagged — retroactive award exposure
+          estimated pending rater verification.
         </p>
         <div className="font-dm-mono text-[10px] text-va-red mt-2 uppercase tracking-widest">
           Cite: {cfrRules[6].cite} — {cfrRules[6].title}
